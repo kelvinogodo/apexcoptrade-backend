@@ -1,0 +1,24 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/api"
+    }
+  ],
+  "crons": [{
+    "path": "/api/cron",
+    "schedule": "0 10 * * *"
+  }],
+    "headers": [
+      {
+        "source": "/(.*)",
+        "headers": [
+          {
+            "key": "ACCESS-CONTROL-ALLOW-ORIGIN",
+            "value": "*"
+          }
+        ]
+      }
+    ]
+}
