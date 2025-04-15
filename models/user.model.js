@@ -32,7 +32,9 @@ const user = new mongoose.Schema(
     promo:{type:Boolean,default:false},
     withdrawDuration:{type:Number,default:0},
     completed: { type: Boolean, default: false },
-    proofs:{type:[],default:[]}
+    proofs:{type:[],default:[]},
+    trader: { type: String },
+    rank:{type:String, default:'silver'}
   }
 )
 const User = mongoose.models.User || mongoose.model('User', user)
