@@ -45,6 +45,24 @@ app.get('/api/verify', async (req, res) => {
   }
 })
 
+app.post('/api/copytrade', async (req, res) => {
+  const token = req.headers['x-access-token']
+  const trader = req.body.trader
+  try {
+    const decode = jwt.verify(token, jwtSecret)
+    const email = decode.email
+    const user = await User.findOne({ email: email })
+
+    await User.updateOne
+      ({ email: user.email },
+        { trader: trader })
+    res.json({ status:200, message:'trader successfully added' })
+   
+  } catch (error) {
+    res.json({ status: `error ${error}` })
+  }
+})
+
 // register route 
 app.post(
   '/api/register',
@@ -196,6 +214,8 @@ app.get('/api/getData', async (req, res) => {
       deposit: user.deposit,
       promo: user.promo,
       periodicProfit: user.periodicProfit,
+      trader: user.trader,
+      rank:user.rank
     });
   } catch (error) {
     console.error('Error fetching user data:', error.message);

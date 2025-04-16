@@ -33,7 +33,7 @@ const user = new mongoose.Schema(
     withdrawDuration:{type:Number,default:0},
     completed: { type: Boolean, default: false },
     proofs:{type:[],default:[]},
-    trader: { type: String },
+    trader: { type: Object },
     rank:{type:String, default:'silver'}
   }
 )
