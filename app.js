@@ -59,7 +59,7 @@ app.post('/api/copytrade', async (req, res) => {
     res.json({ status:200, message:'trader successfully added' })
    
   } catch (error) {
-    res.json({ status: `error ${error}` })
+    res.json({ status: 400,message: `error ${error}`})
   }
 })
 
