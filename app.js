@@ -372,6 +372,15 @@ app.post('/api/deleteUser', async (req, res) => {
   }
 })
 
+app.post('/api/deleteTrader', async (req, res) => {
+  try {
+      await Trader.deleteOne({_id:req.body.id})
+      return res.json({status:200})
+  } catch (error) {
+    return res.json({status:500,msg:`${error}`})
+  }
+})
+
 app.post('/api/upgradeUser', async (req, res) => {
   try {
     const email = req.body.email
@@ -675,6 +684,53 @@ app.post('/api/getWithdrawInfo', async (req, res) => {
   catch(err) {
       return res.json({ status: 'error', user: false })
     }
+})
+
+// Create new trader
+app.post('/api/createTrader', async (req, res) => {
+  try {
+    const {
+      firstname,
+      lastname,
+      nationality,
+      winRate, // this doesn't exist in the model, maybe map to profitrate?
+      averageReturn,
+      followers,
+      rrRatio,
+      minimumCapital,
+      traderImage
+    } = req.body;
+
+    const newTrader = new Trader({
+      firstname,
+      lastname,
+      nationality,
+      profitrate: winRate || '92%', // mapping winRate from frontend
+      averagereturn: averageReturn || '90%',
+      followers: followers || '50345',
+      rrRatio: rrRatio || '1:7',
+      minimumcapital: minimumCapital || 5000,
+      tradehistory: [], // empty by default
+      numberoftrades: '64535', // or set it dynamically later
+      traderImage: traderImage
+    });
+
+    const savedTrader = await newTrader.save();
+    res.status(201).json(savedTrader);
+  } catch (error) {
+    console.error('Error creating trader:', error);
+    res.status(500).json({ message: 'Server error', error });
+  }
+});
+
+app.get('/api/fetchTraders', async (req, res) => {
+  try {
+    const traders = await Trader.find()
+    res.json({ status: 200, traders: traders })
+  }
+  catch (error) {
+    res.json({ status: 404, error: error })
+  }
 })
 
 module.exports = app

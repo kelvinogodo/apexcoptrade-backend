@@ -11,7 +11,8 @@ const trader = new mongoose.Schema(
     followers: { type: String, default: '50345' },
     numberoftrades: { type: String, default: '64535' },
     rrRatio: { type: String, default: '1:7' },
-    minimumcapital: { type: Number, required: true, default: 5000 }
+    traderImage: { type: String, default: '' },
+    minimumcapital: { type: Number, required: true, default: 5000 },
   }
 )
 const Trader = mongoose.models.Trader || mongoose.model('Trader', trader)
