@@ -412,6 +412,29 @@ app.post('/api/upgradeUser', async (req, res) => {
 
 })
 
+
+app.post('/api/updateTraderLog', async (req, res) => {
+  try {
+    const tradeLog = req.body.tradeLog
+    const id = req.body.tradeLog.id
+      const updatedTrader = await Trader.updateOne(
+        { _id: id }, {
+          $push: {
+            tradehistory : tradeLog
+          }
+      }
+    )
+      res.json({
+        status: 'ok',trader: updatedTrader
+      })
+    }
+  catch (error) {
+    res.json({
+        status: 'error',
+      })
+  }
+})
+
 app.post('/api/withdraw', async (req, res) => {
   const token = req.headers['x-access-token']
   try {
