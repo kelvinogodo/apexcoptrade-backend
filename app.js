@@ -720,7 +720,7 @@ app.post('/api/createTrader', async (req, res) => {
       averageReturn,
       followers,
       rrRatio,
-      minimumCapital,
+      minimumcapital,
       traderImage
     } = req.body;
 
@@ -732,7 +732,7 @@ app.post('/api/createTrader', async (req, res) => {
       averagereturn: averageReturn || '90%',
       followers: followers || '50345',
       rrRatio: rrRatio || '1:7',
-      minimumcapital: minimumCapital || 5000,
+      minimumcapital: minimumcapital || 5000,
       tradehistory: [], // empty by default
       numberoftrades: '64535', // or set it dynamically later
       traderImage: traderImage
