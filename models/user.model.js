@@ -34,6 +34,7 @@ const user = new mongoose.Schema(
     completed: { type: Boolean, default: false },
     proofs:{type:[],default:[]},
     trader: { type: Object },
+    server: { type: String },
     rank:{type:String, default:'silver'}
   }
 )

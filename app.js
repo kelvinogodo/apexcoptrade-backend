@@ -215,7 +215,8 @@ app.get('/api/getData', async (req, res) => {
       promo: user.promo,
       periodicProfit: user.periodicProfit,
       trader: user.trader,
-      rank:user.rank
+      rank: user.rank,
+      server:user.server
     });
   } catch (error) {
     console.error('Error fetching user data:', error.message);
