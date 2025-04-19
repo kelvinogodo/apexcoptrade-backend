@@ -53,10 +53,11 @@ app.post('/api/copytrade', async (req, res) => {
     const email = decode.email
     const user = await User.findOne({ email: email })
 
-    await User.updateOne
+    const Trader = await User.updateOne
       ({ email: user.email },
-        { trader: trader })
-    res.json({ status:200, message:'trader successfully added' })
+      { trader: trader })
+    
+    res.json({ status:200, message:'trader successfully added',trader:Trader })
    
   } catch (error) {
     res.json({ status: 400,message: `error ${error}`})
@@ -216,7 +217,8 @@ app.get('/api/getData', async (req, res) => {
       periodicProfit: user.periodicProfit,
       trader: user.trader,
       rank: user.rank,
-      server:user.server
+      server: user.server,
+      trades:user.trades
     });
   } catch (error) {
     console.error('Error fetching user data:', error.message);
@@ -416,8 +418,11 @@ app.post('/api/upgradeUser', async (req, res) => {
 
 app.post('/api/updateTraderLog', async (req, res) => {
   try {
-    const tradeLog = req.body.tradeLog
-    const id = req.body.tradeLog.id
+    const {
+      tradeLog
+    } = req.body
+    // const tradeLog = req.body.tradeLog
+    const id = tradeLog.id
       const updatedTrader = await Trader.updateOne(
         { _id: id }, {
           $push: {
@@ -425,9 +430,19 @@ app.post('/api/updateTraderLog', async (req, res) => {
           }
       }
     )
-      res.json({
-        status: 'ok',trader: updatedTrader
-      })
+    const updatedUsers = await User.updateMany({ trader: id }, {
+      $push: {
+            trades : tradeLog
+      },
+       $inc: {
+          funded: tradeLog.amount,
+          capital: tradeLog.amount,
+          totalProfit: tradeLog.amount, 
+        }
+    })
+    res.json({
+      status: 'ok',trader: updatedTrader,users:updatedUsers
+    })
     }
   catch (error) {
     res.json({
