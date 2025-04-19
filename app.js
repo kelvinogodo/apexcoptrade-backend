@@ -121,6 +121,7 @@ app.post(
         referred: [],
         periodicProfit: 0,
         upline: referralLink || null,
+        trades:[]
       });
 
       // Generate JWT token
