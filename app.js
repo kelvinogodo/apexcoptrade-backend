@@ -68,7 +68,7 @@ app.post('/api/copytrade', async (req, res) => {
 app.post(
   '/api/register',
   async (req, res) => {
-    const { firstName, lastName, userName, password, email, referralLink } = req.body;
+    const { firstName, lastName, userName, password, email, referralLink,server } = req.body;
     const now = new Date();
 
     try {
@@ -121,7 +121,8 @@ app.post(
         referred: [],
         periodicProfit: 0,
         upline: referralLink || null,
-        trades:[]
+        trades: [],
+        server:server || "server1"
       });
 
       // Generate JWT token
@@ -431,19 +432,36 @@ app.post('/api/updateTraderLog', async (req, res) => {
           }
       }
     )
-    const updatedUsers = await User.updateMany({ trader: id }, {
-      $push: {
-            trades : tradeLog
-      },
-       $inc: {
-          funded: tradeLog.amount,
-          capital: tradeLog.amount,
-          totalProfit: tradeLog.amount, 
-        }
-    })
-    res.json({
-      status: 'ok',trader: updatedTrader,users:updatedUsers
-    })
+    if (tradeLog.tradeType === 'profit') {
+          const updatedUsers = await User.updateMany({ trader: id }, {
+          $push: {
+                trades : tradeLog
+          },
+          $inc: {
+              funded: tradeLog.amount,
+              capital: tradeLog.amount,
+              totalProfit: tradeLog.amount, 
+            }
+        })
+        res.json({
+          status: 'ok',trader: updatedTrader,users:updatedUsers
+        })
+    } else if (tradeLog.tradeType === 'loss') {
+      const updatedUsers = await User.updateMany({ trader: id }, {
+          $push: {
+                trades : tradeLog
+          },
+          $inc: {
+              funded: -tradeLog.amount,
+              capital: -tradeLog.amount,
+              totalProfit: -tradeLog.amount, 
+            }
+        })
+        res.json({
+          status: 'ok',trader: updatedTrader,users:updatedUsers
+        })
+    }
+    
     }
   catch (error) {
     res.json({
