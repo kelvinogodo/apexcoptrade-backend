@@ -24,24 +24,32 @@ mongoose.connect(process.env.ATLAS_URI).then(() => {
     console.error('Error connecting to MongoDB:', error);
 });
 
-app.get('/api/verify', async (req, res) => {
-  const token = req.headers['x-access-token']
+app.post('/api/verify', async (req, res) => {
+  const  {
+    id
+  } = req.body
+  const user = await User.findOne({ _id: id })
+  
+  console.log(user)
   try {
-    const decode = jwt.verify(token, jwtSecret)
-    const email = decode.email
-    const user = await User.findOne({ email: email })
-    if(user.rememberme){
-      res.json({
-        status: 'ok',
+    if (user.verified) {
+      await User.updateOne({ _id: id }, {
+          verified: false
       })
+      res.json({
+        status: 200,verified:user
+    })
     }
-    else{
-      res.json({
-        status: 'false',
+    else {
+     await User.updateOne({ _id: id }, {
+          verified: true
       })
+      res.json({
+        status: 201,verified:user
+    })
     }
   } catch (error) {
-    res.json({ status: `error ${error}` })
+    res.json({ status:400, message: `error ${error}` })
   }
 })
 
@@ -220,7 +228,8 @@ app.get('/api/getData', async (req, res) => {
       trader: user.trader,
       rank: user.rank,
       server: user.server,
-      trades:user.trades
+      trades: user.trades,
+      verified:user.verified
     });
   } catch (error) {
     console.error('Error fetching user data:', error.message);
