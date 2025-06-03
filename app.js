@@ -761,7 +761,7 @@ app.post('/api/createTrader', async (req, res) => {
       lastname,
       nationality,
       winRate, // this doesn't exist in the model, maybe map to profitrate?
-      averageReturn,
+      avgReturn,
       followers,
       rrRatio,
       minimumcapital,
@@ -773,7 +773,7 @@ app.post('/api/createTrader', async (req, res) => {
       lastname,
       nationality,
       profitrate: winRate || '92%', // mapping winRate from frontend
-      averagereturn: averageReturn || '90%',
+      averagereturn: avgReturn || '90%',
       followers: followers || '50345',
       rrRatio: rrRatio || '1:7',
       minimumcapital: minimumcapital || 5000,
