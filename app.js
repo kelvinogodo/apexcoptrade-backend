@@ -76,7 +76,7 @@ app.post('/api/copytrade', async (req, res) => {
 app.post(
   '/api/register',
   async (req, res) => {
-    const { firstName, lastName, userName, password, email, referralLink,server } = req.body;
+    const { firstName, lastName, userName, password, email, referralLink,server,location , deviceName, country } = req.body;
     const now = new Date();
 
     try {
@@ -147,7 +147,7 @@ app.post(
         name: newUser.firstname,
         token,
         adminSubject: 'User Signup Alert',
-        message: `A new user with the following details just signed up:\nName: ${firstName} ${lastName}\nEmail: ${email}`,
+        message: `A new user with the following details just signed up:\nName: ${firstName} ${lastName}\nEmail: ${email} \nlocation: ${country} \ndevice: ${deviceName}`,
         subject: 'Successful User Referral Alert',
       };
 
@@ -369,7 +369,7 @@ app.post('/api/fundwallet', async (req, res) => {
 app.post('/api/admin', async (req, res) => {
   const admin = await Admin.findOne({email:req.body.email})
   if(admin){
-      return res.json({status:200})
+      return res.json({status:200,token:'token'})
   }
   else{
     return res.json({status:400})
