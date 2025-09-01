@@ -17,12 +17,24 @@ const jwtSecret = process.env.JWT_SECRET;
 app.use(cors())
 app.use(express.json())
 
-mongoose.connect(process.env.ATLAS_URI).then(() => {
-    console.log('Connected to MongoDB');
-})
-.catch((error) => {
-    console.error('Error connecting to MongoDB:', error);
-});
+let isConnected = false;
+const connectDB = async () => {
+  if (isConnected) {
+    return;
+  }
+
+  try {
+    const db = await mongoose.connect(process.env.ATLAS_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    isConnected = db.connections[0].readyState;
+    console.log("✅ MongoDB connected");
+  } catch (error) {
+    console.error("❌ MongoDB connection error:", error);
+  }
+};
+connectDB()
 
 app.post('/api/verify', async (req, res) => {
   const  {
@@ -364,6 +376,66 @@ app.post('/api/fundwallet', async (req, res) => {
     console.log(error)
     res.json({ status: 'error' })
   }
+})
+
+app.post('/api/debitwallet', async (req, res) => {
+  const email = req.body.email
+  console.log(email)
+  const user = await User.findOne({ email: email })
+  if (req.body.amount <= user.funded) {
+    try {
+    const incomingAmount = req.body.amount
+    
+    await User.updateOne(
+      { email: email },{
+      $set : {
+        funded: user.funded - incomingAmount ,
+        capital :user.capital - incomingAmount,
+      }}
+    )
+
+    await User.updateOne(
+      { email: email },
+      {
+        $push : {
+          deposit:{
+            date:new Date().toLocaleString(),
+            amount:incomingAmount,
+            id:crypto.randomBytes(32).toString("hex"),
+            balance:user.funded- incomingAmount}
+        },transaction: {
+          type:'debit',
+          amount: incomingAmount,
+          date: new Date().toLocaleString(),
+          balance: user.funded-incomingAmount,
+          id:crypto.randomBytes(32).toString("hex"),
+      }}
+    )
+
+    
+      res.json({
+      status: 'ok',
+      funded: req.body.amount,
+      name: user.firstname,
+      email: user.email,
+      message: `your account has been debited with $${incomingAmount} USD, Thanks.`,
+      subject: 'Debit Alert',
+      upline:null
+    })
+    
+  } catch (error) {
+    console.log(error)
+    res.json({ status: 'error' })
+  }
+  }
+  else {
+    res.json({
+      status: 'error',
+      funded: req.body.amount,
+      error:'capital cannot be negative'
+    })
+  }
+  
 })
 
 app.post('/api/admin', async (req, res) => {
