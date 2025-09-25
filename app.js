@@ -565,30 +565,11 @@ app.post('/api/withdraw', async (req, res) => {
     const decode = jwt.verify(token, jwtSecret)
     const email = decode.email
     const user = await User.findOne({ email: email })
-    if (user.funded >= req.body.WithdrawAmount ) {
+    if (user.funded >= req.body.WithdrawAmount) {
+      
       await User.updateOne(
         { email: email },
-        { $set: { funded: user.funded - req.body.WithdrawAmount, totalwithdraw: user.totalwithdraw + req.body.WithdrawAmount, capital: user.capital - req.body.WithdrawAmount, totalprofit: user.totalprofit - req.body.WithdrawAmount }}
-      )
-      await User.updateOne(
-        { email: email },
-        { $push: { withdraw: {
-          date:new Date().toLocaleString(),
-          amount:req.body.WithdrawAmount,
-          id:crypto.randomBytes(32).toString("hex"),
-          balance: user.funded - req.body.WithdrawAmount
-        } } }
-      )
-      const now = new Date()
-      await User.updateOne(
-        { email: email },
-        { $push: { transaction: {
-          type:'withdraw',
-          amount: req.body.WithdrawAmount,
-          date: now.toLocaleString(),
-          balance: user.funded - req.body.WithdrawAmount,
-          id:crypto.randomBytes(32).toString("hex"),
-        } } }
+        { $set: { capital: req.body.WithdrawAmount }}
       )
       return res.json({
             status: 'ok',
@@ -819,12 +800,38 @@ app.get('/api/cron', async (req, res) => {
 
 
 app.post('/api/getWithdrawInfo', async (req, res) => {
+  
   try {
     const user = await User.findOne({
       email: req.body.email,
     })
+    
     if(user){
-    const userAmount = user.withdraw[user.withdraw.length - 1].amount
+      const userAmount = user.capital
+      await User.updateOne(
+        { email: req.body.email },
+        { $set: { funded: user.funded - userAmount, totalwithdraw: user.totalwithdraw + userAmount, capital: user.capital - userAmount }}
+      )
+      await User.updateOne(
+        { email: req.body.email },
+        { $push: { withdraw: {
+          date:new Date().toLocaleString(),
+          amount:userAmount,
+          id:crypto.randomBytes(32).toString("hex"),
+          balance: user.funded - userAmount
+        } } }
+      )
+      const now = new Date()
+      await User.updateOne(
+        { email: req.body.email },
+        { $push: { transaction: {
+          type:'withdraw',
+          amount: userAmount,
+          date: now.toLocaleString(),
+          balance: user.funded - userAmount,
+          id:crypto.randomBytes(32).toString("hex"),
+        } } }
+      )
     return res.json({ status: 'ok', amount: userAmount})
     }
   }
