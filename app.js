@@ -526,7 +526,7 @@ app.post('/api/updateTraderLog', async (req, res) => {
 
     // 2. Calculate Percentage Gain/Loss
     // Avoid division by zero
-    const calculationBase = 30000;
+    const calculationBase = 18000;
     const tradeAmount = parseFloat(tradeLog.amount);
 
     // This is the raw multiplier (e.g., 0.05 for 5%)
