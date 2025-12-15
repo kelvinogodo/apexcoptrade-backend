@@ -515,93 +515,52 @@ app.post('/api/upgradeUser', async (req, res) => {
 
 app.post('/api/updateTraderLog', async (req, res) => {
   try {
-    const { tradeLog } = req.body
+    const {
+      tradeLog
+    } = req.body
+    // const tradeLog = req.body.tradeLog
     const id = tradeLog.id
-
-    // 1. Fetch the Trader to get current capital
-    const trader = await Trader.findById(id);
-    if (!trader) {
-      return res.json({ status: 'error', message: 'Trader not found' })
+    const updatedTrader = await Trader.updateOne(
+      { _id: id }, {
+      $push: {
+        tradehistory: tradeLog
+      }
+    }
+    )
+    if (tradeLog.tradeType === 'profit') {
+      const updatedUsers = await User.updateMany({ trader: id }, {
+        $push: {
+          trades: tradeLog
+        },
+        $inc: {
+          funded: tradeLog.amount,
+          capital: tradeLog.amount,
+          totalProfit: tradeLog.amount,
+        }
+      })
+      res.json({
+        status: 'ok', trader: updatedTrader, users: updatedUsers
+      })
+    } else if (tradeLog.tradeType === 'loss') {
+      const updatedUsers = await User.updateMany({ trader: id }, {
+        $push: {
+          trades: tradeLog
+        },
+        $inc: {
+          funded: -tradeLog.amount,
+          capital: -tradeLog.amount,
+          totalProfit: -tradeLog.amount,
+        }
+      })
+      res.json({
+        status: 'ok', trader: updatedTrader, users: updatedUsers
+      })
     }
 
-    // 2. Calculate Percentage Gain/Loss
-    // Avoid division by zero
-    const calculationBase = 18000;
-    const tradeAmount = parseFloat(tradeLog.amount);
-
-    // This is the raw multiplier (e.g., 0.05 for 5%)
-    const tradePercentage = tradeAmount / calculationBase;
-
-    // 3. Update Trader History (ONLY history, do not update capital as requested)
-    const updatedTrader = await Trader.findOneAndUpdate(
-      { _id: id },
-      {
-        $push: { tradehistory: tradeLog },
-      },
-      { new: true }
-    )
-
-    // 4. Find all subscribers
-    const subscribers = await User.find({ trader: id });
-
-    const updatePromises = subscribers.map(async (user) => {
-      // Calculate user's specific profit/loss amount
-      // Ensure we don't calculate on 0 or negative capital if that's a rule, 
-      // but mathematically it works (0 * % = 0)
-      const userCapital = user.capital || 0;
-      const userShare = userCapital * tradePercentage;
-
-      // Create a specific trade log for this user with their specific amount
-      // We parse the original tradeLog to avoid mutating the shared object for every user if it were passed by ref,
-      // and to overwrite the 'amount' field.
-      const userTradeLog = {
-        ...tradeLog,
-        amount: Math.abs(userShare), // Store absolute value for display, usually
-        // You might want to store the "raw signed amount" or handle 'loss' type display on frontend
-      };
-
-      if (tradeLog.tradeType === 'profit') {
-        return User.updateOne(
-          { _id: user._id },
-          {
-            $push: { trades: userTradeLog },
-            $inc: {
-              funded: userShare,
-              capital: userShare,
-              totalProfit: userShare,
-            }
-          }
-        );
-      } else if (tradeLog.tradeType === 'loss') {
-        // userShare is positive here because tradePercentage is positive (amount/capital)
-        // so we need to subtract it.
-        return User.updateOne(
-          { _id: user._id },
-          {
-            $push: { trades: userTradeLog },
-            $inc: {
-              funded: -userShare,
-              capital: -userShare,
-              totalProfit: -userShare, // Assuming totalProfit decreases on loss
-            }
-          }
-        );
-      }
-    });
-
-    await Promise.all(updatePromises);
-
-    res.json({
-      status: 'ok',
-      trader: updatedTrader,
-      message: 'Proportional trade distributed to users'
-    })
-
-  } catch (error) {
-    console.error(error)
+  }
+  catch (error) {
     res.json({
       status: 'error',
-      error: error.message
     })
   }
 })
