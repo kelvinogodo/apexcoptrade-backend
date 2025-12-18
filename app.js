@@ -92,6 +92,24 @@ app.post('/api/copytrade', async (req, res) => {
   }
 })
 
+app.post('/api/stopcopytrade', async (req, res) => {
+  const token = req.headers['x-access-token']
+  const trader = req.body.trader
+  try {
+    const decode = jwt.verify(token, jwtSecret)
+    const email = decode.email
+    const user = await User.findOne({ email: email })
+
+    await User.updateOne
+      ({ email: user.email },
+      {trader: ''} )
+    
+    res.json({ status:200, message:'trader successfully removed' })
+   
+  } catch (error) {
+    res.json({ status: 400,message: `error ${error}`})
+  }
+})
 // register route 
 app.post(
   '/api/register',
