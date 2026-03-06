@@ -11,7 +11,7 @@ dotenv.config()
 
 const app = express()
 
-const jwtSecret = process.env.JWT_SECRET;
+const jwtSecret = process.env.JWT_SECRET || 'secret1258';
 
 
 app.use(cors())
@@ -30,17 +30,23 @@ if (!cached) {
 }
 
 const connectDB = async () => {
-  if (cached.conn) return cached.conn;
+  try {
+    if (cached.conn) return cached.conn;
 
-  if (!cached.promise) {
-    cached.promise = mongoose.connect(ATLAS_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    }).then((mongoose) => mongoose);
+    if (!cached.promise) {
+      cached.promise = mongoose.connect(ATLAS_URI, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+      }).then((mongoose) => mongoose);
+    }
+
+    cached.conn = await cached.promise;
+    console.log("Connected to MongoDB");
+    return cached.conn;
+  } catch (error) {
+    console.error("MongoDB connection error:", error);
+    process.exit(1);
   }
-
-  cached.conn = await cached.promise;
-  return cached.conn;
 }
 connectDB()
 
@@ -102,12 +108,12 @@ app.post('/api/stopcopytrade', async (req, res) => {
 
     await User.updateOne
       ({ email: user.email },
-      {trader: ''} )
-    
-    res.json({ status:200, message:'trader successfully removed' })
-   
+        { trader: '' })
+
+    res.json({ status: 200, message: 'trader successfully removed' })
+
   } catch (error) {
-    res.json({ status: 400,message: `error ${error}`})
+    res.json({ status: 400, message: `error ${error}` })
   }
 })
 // register route 
@@ -302,19 +308,27 @@ app.post('/api/updateUserData', async (req, res) => {
     // Prepare an object to hold only changed fields
     let updatedFields = {};
 
-    // Loop through request body and compare with existing user data
-    Object.keys(req.body).forEach((key) => {
-      if (req.body[key] !== undefined && req.body[key] !== user[key]) {
-        updatedFields[key] = req.body[key];
+    // Standardize comparison and update only valid fields
+    const fieldsToUpdate = [
+      'firstname', 'lastname', 'phonenumber', 'country',
+      'state', 'zipcode', 'address', 'profilepicture'
+    ];
+
+    fieldsToUpdate.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        // Only update if the value is different (trimming and standardizing)
+        const newValue = typeof req.body[field] === 'string' ? req.body[field].trim() : req.body[field];
+        const oldValue = user[field];
+
+        if (newValue !== oldValue) {
+          updatedFields[field] = newValue;
+        }
       }
     });
 
-    // Ensure email remains unchanged
-    delete updatedFields.email;
-
     // Update only if there are changes
     if (Object.keys(updatedFields).length > 0) {
-      await User.updateOne({ email: user.email }, { $set: updatedFields });
+      await User.updateOne({ _id: user._id }, { $set: updatedFields });
       return res.json({ status: 200, message: "Profile updated successfully" });
     }
 
@@ -650,7 +664,7 @@ app.post('/api/sendproof', async (req, res) => {
 
 
 
-const SECRET_KEY = process.env.JWT_SECRET || 'defaultsecretkey'; // Replace with your actual secret stored in .env
+// SECRET_KEY is not needed since we use jwtSecret globally
 
 app.post('/api/login', async (req, res) => {
   try {
@@ -671,7 +685,7 @@ app.post('/api/login', async (req, res) => {
     // Generate JWT token with user ID and email
     const token = jwt.sign(
       { id: user._id, email: user.email },
-      SECRET_KEY,
+      jwtSecret,
       { expiresIn: '7d' } // Set token to expire in 7 days
     );
 
